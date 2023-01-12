@@ -32,7 +32,7 @@ public class TinyFFT
 
   private static boolean hasOneBitOrNone( int n ) { return (n & n-1) == 0; }
 
-  public static final int len() {
+  public static int len() {
     return VSPEC_F32.length();
   }
 
@@ -47,16 +47,14 @@ public class TinyFFT
     }
   }
 
-  private static final VectorShuffle<Float>[] INDICES;
-  private static final FloatVector[] FACTORS;
+  @SuppressWarnings("unchecked")
+  private static final VectorShuffle<Float>[] INDICES = new VectorShuffle[numberOfTrailingZeros(len())*2];
+  private static final          FloatVector[] FACTORS = new   FloatVector[numberOfTrailingZeros(len())*2];
   static {
-    int vLen = VSPEC_F32.length(),
-       nLvls = numberOfTrailingZeros(vLen);
+    int vLen = VSPEC_F32.length();
 
     var shuffle = new   int[vLen*2];
     var roots   = new float[vLen*2];
-    INDICES = new VectorShuffle[nLvls*2];
-    FACTORS = new FloatVector[nLvls*2];
 
     for( int k=0, b=1; b < vLen; b<<=1, k+=2 )
     {
@@ -118,7 +116,7 @@ public class TinyFFT
     FloatVector
       im = FloatVector.fromArray(VSPEC_F32, imag, 0),
       re = FloatVector.fromArray(VSPEC_F32, real, 0);
-    for(int lvl = 0; lvl < INDICES.length; lvl+=2 )
+    for(int lvl = 0; lvl < INDICES.length; )
     {
       VectorShuffle<Float>
         eve = INDICES[lvl],
@@ -128,8 +126,8 @@ public class TinyFFT
         odd_re = re.rearrange(odd),
         eve_im = im.rearrange(eve),
         odd_im = im.rearrange(odd),
-        w_re = FACTORS[lvl],
-        w_im = FACTORS[lvl+1];
+        w_re = FACTORS[lvl++],
+        w_im = FACTORS[lvl++];
       im = odd_im.fma(w_re,       odd_re.fma(w_im, eve_im));
       re = odd_im.fma(w_im.neg(), odd_re.fma(w_re, eve_re));
     }
@@ -142,7 +140,7 @@ public class TinyFFT
     FloatVector
       im = FloatVector.fromArray(VSPEC_F32, imag, 0),
       re = FloatVector.fromArray(VSPEC_F32, real, 0);
-    for(int lvl = 0; lvl < INDICES.length; lvl+=2 )
+    for(int lvl = 0; lvl < INDICES.length; )
     {
       VectorShuffle<Float>
         eve = INDICES[lvl],
@@ -152,8 +150,8 @@ public class TinyFFT
         odd_re = re.rearrange(odd),
         eve_im = im.rearrange(eve),
         odd_im = im.rearrange(odd),
-        w_re = FACTORS[lvl],
-        w_im = FACTORS[lvl+1];
+        w_re = FACTORS[lvl++],
+        w_im = FACTORS[lvl++];
       im = odd_im.fma(w_re,       odd_re.fma(w_im, eve_im));
       re = odd_im.fma(w_im.neg(), odd_re.fma(w_re, eve_re));
     }
